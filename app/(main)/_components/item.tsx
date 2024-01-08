@@ -1,8 +1,15 @@
 "use client"
 
+import { DropdownMenuContent,DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/lib/utils";
-import { ChevronDown, ChevronRight, LucideIcon } from "lucide-react";
+import { useUser } from "@clerk/clerk-react";
+import { useMutation } from "convex/react";
+import { ChevronDown, ChevronRight, LucideIcon, MoreHorizontal, Plus, Trash} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface ItemProps {
   id?:Id<"documents">;
@@ -28,6 +35,29 @@ export const Item = ({
   onExpand,
   expanded
 }:ItemProps) => {
+  const {user} = useUser()
+  const router = useRouter()
+  const create = useMutation(api.documents.create)
+  const handleExpand = (event: React.MouseEvent<HTMLDivElement, MouseEvent>)=>{
+    event.stopPropagation()
+    onExpand?.() // actually onExpand now has netrual argument which is parantDocumentId
+  }
+  const onCreate = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    event.stopPropagation()
+    if(!id) return;
+    const promise = create({parentDocument: id, title: "Untitled"}).then((documentId)=>{
+      // add new child page will triger expand
+      if(!expanded){
+        onExpand?.()
+      }
+      // router.push(`/documents/${documentId}`)
+    })
+    toast.promise(promise,{
+      loading:'Creating a new note...',
+      success:'New note created',
+      error: 'Failed to create a new note.'
+    })
+  }
   const ChevronIcon = expanded ? ChevronDown : ChevronRight
   return (
     <div onClick={onClick}
@@ -42,7 +72,7 @@ export const Item = ({
         <div 
         role="button"
         className="h-full rounded-sm hover:bg-neutral-300 dark:bg-neutral mr-1"
-        onClick={()=>{}}
+        onClick={handleExpand}
         >
           <ChevronIcon className="h-4 w-4 shrink-0 text-muted-foreground/50"/>
         </div>
@@ -58,6 +88,54 @@ export const Item = ({
           <span className="text-xs">Ctrl K</span>
         </kbd>
       )}
+      {!!id && (
+        <div className="ml-auto flex items-center gap-x-2"
+        >
+          <DropdownMenu>
+            <DropdownMenuTrigger
+            asChild
+            onClick = {(e)=>e.stopPropagation()}
+            >
+              <div
+                role="button"
+                className="opacity-0 group-hover:opacity-100 h-full ml-auto rounded-sm hover:bg-neutral-300 dark:hover:bg-neutral-600"
+              >
+                <MoreHorizontal className="h-4 w-4 text-muted-foreground"/>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              className="w-60"
+              align="start"
+              side="right"
+              forceMount
+            >
+              <DropdownMenuItem onClick={()=>{}}>
+                <Trash className="h-4 w-4 mr-2"/>
+                Delete
+              </DropdownMenuItem>     
+              <DropdownMenuSeparator/>
+              <div className="text-xs text-muted-foreground p-2">
+                Last edited by {user?.username}  
+              </div>        
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <div className="opacity-0 group-hover:opacity-100 h-full ml-auto rounded-sm hover:bg-neutral-300 dark:hover:bg-neutral-600" role="button"
+        onClick={onCreate}>
+            <Plus className="h-4 w-4 text-muted-foreground"/>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+Item.Skeleton = function ItemSkeleton({level}:{level?:number}){
+  return (
+    <div style={{paddingLeft: level ? `${(level * 12)+25}px`: '12px'}}
+      className="flex gap-x-2 py-[3px]"
+    >
+      <Skeleton className="h-4 w-4"/>
+      <Skeleton className="h-4 w-[30%]"/>
     </div>
   )
 }
