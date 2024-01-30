@@ -22,18 +22,18 @@ const Editor=({onChange,initialContent,editable}:EditorProps)=>{
     return response.url
   }
   const editor: BlockNoteEditor = useBlockNote({
-    // editable,
-    // initialContent:initialContent? JSON.parse(initialContent) : undefined,
-    // onEditorContentChange:(editor)=>{
-    //   onChange(JSON.stringify(editor.topLevelBlocks,null,2))
-    // },
-    // uploadFile: handleUpload
+    editable,
+    initialContent:initialContent? JSON.parse(initialContent) : undefined,
+    onEditorContentChange:(editor)=>{
+      onChange(JSON.stringify(editor.topLevelBlocks,null,2))
+    },
+    uploadFile: handleUpload
   })
   return (
   <div>
     <BlockNoteView
     editor={editor}
-    // theme={resolvedTheme==="dark"?"dark":"light"}
+    theme={resolvedTheme==="dark"?"dark":"light"}
     />
   </div>
   )
